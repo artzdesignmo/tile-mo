@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="silver">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Tile Mo — Seamless Pattern Studio</title>
+<script src="https://cdn.jsdelivr.net/npm/paper@0.12.18/dist/paper-full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root, [data-theme="silver"]{ --bg:#eaedef; --panel:#f6f8f9; --card:#ffffff; --ink:#2b2926; --muted:#8a867e; --line:#d5d9dc; --accent:#8a867e; }
+[data-theme="white"]{ --bg:#ffffff; --panel:#f7f7f7; --card:#ffffff; --ink:#222222; --muted:#8a867e; --line:#e6e6e6; --accent:#8a867e; }
+[data-theme="black"]{ --bg:#171717; --panel:#202020; --card:#262626; --ink:#e9e9e6; --muted:#a39e93; --line:#353535; --accent:#a39e93; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Noto Sans TC", system-ui, sans-serif; }
+h1,h2,h3{ font-family:"Dela Gothic One","Noto Sans TC",sans-serif; font-weight:400; letter-spacing:.01em; }
+header{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:18px 22px 12px; border-bottom:1px solid var(--line); }
+header h1{ margin:0; font-size:34px; line-height:1; }
+header p{ margin:6px 0 0; color:var(--muted); font-size:14px; }
+.topbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+.iconbtn{ display:inline-flex; align-items:center; justify-content:center; min-width:38px; height:38px; padding:0 8px; background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:999px; cursor:pointer; font-size:13px; text-decoration:none; }
+.iconbtn svg{ width:20px; height:20px; }
+.probtn{ height:38px; padding:0 16px; border-radius:999px; border:1px solid var(--accent); background:var(--ink); color:var(--bg); font-family:"Dela Gothic One",sans-serif; font-size:13px; cursor:pointer; }
+.layout{ display:flex; gap:18px; padding:18px 22px 30px; align-items:flex-start; }
+#panel{ width:302px; flex:none; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:14px; max-height:calc(100vh - 110px); overflow:auto; }
+main{ flex:1; min-width:0; }
+.stage{ display:flex; gap:18px; flex-wrap:wrap; }
+.canvasbox{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; }
+.canvasbox h3{ margin:0 0 10px; font-size:16px; }
+canvas{ display:block; width:100%; height:auto; max-width:640px; border-radius:8px; background:#ffffff; touch-action:none; }
+#previewCanvas{ max-width:600px; }
+#previewCanvas.anim-rotate{ animation:prevspin 14s linear infinite; }
+#previewCanvas.anim-breathe{ animation:prevbreathe 3.2s ease-in-out infinite; }
+@keyframes prevspin{ from{ transform:rotate(0deg);} to{ transform:rotate(360deg);} }
+@keyframes prevbreathe{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.04);} }
+.hint{ color:var(--muted); font-size:12px; margin:8px 0 0; line-height:1.5; }
+.sec{ border-top:1px solid var(--line); padding:12px 0; }
+.sec:first-child{ border-top:none; padding-top:2px; }
+.sec h2{ margin:0 0 10px; font-size:15px; display:flex; align-items:center; gap:8px; }
+.pro-tag{ font-family:"Noto Sans TC",sans-serif; font-size:10px; letter-spacing:.08em; border:1px solid var(--accent); color:var(--muted); border-radius:999px; padding:1px 7px; }
+.row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+.row:last-child{ margin-bottom:0; }
+.btn{ background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:7px 13px; font-size:13px; cursor:pointer; }
+.btn.active{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.btn.danger{ color:#b85c5c; border-color:#e0b9b9; }
+.mbtn{ width:64px; height:56px; background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:12px; cursor:pointer; font-size:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+.mbtn svg{ width:22px; height:22px; }
+label{ font-size:13px; color:var(--muted); }
+input[type="range"]{ width:100%; accent-color:var(--accent); }
+input[type="text"], input[type="number"], input[type="color"], select{ background:var(--card); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:6px 8px; font-size:13px; }
+input[type="text"], input[type="number"]{ width:100%; }
+select{ max-width:100%; }
+.sw{ width:26px; height:26px; border-radius:50%; border:2px solid var(--card); outline:1px solid var(--line); cursor:pointer; padding:0; }
+.sw.sel{ outline:2px solid var(--ink); }
+[data-pro].is-locked{ opacity:.55; }
+[data-pro].is-locked .btn, [data-pro].is-locked button, [data-pro].is-locked input, [data-pro].is-locked select{ cursor:pointer; }
+#selPanel:empty::after{ content:""; }
+.elem-list button{ display:block; width:100%; text-align:left; margin-bottom:4px; }
+#loadError{ display:none; margin:14px 22px 0; padding:12px 16px; border:1px solid #e0b9b9; color:#b85c5c; border-radius:12px; background:var(--card); font-size:14px; }
+#proOverlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:50; align-items:center; justify-content:center; padding:16px; }
+#proOverlay.open{ display:flex; }
+#proDialog{ background:var(--card); color:var(--ink); border-radius:18px; max-width:460px; width:100%; padding:22px; border:1px solid var(--line); }
+#proDialog h2{ margin-top:0; font-size:20px; }
+#proDialog .testnote{ border:1px dashed var(--accent); border-radius:12px; padding:10px 12px; font-size:13px; color:var(--muted); line-height:1.6; }
+#proStatus{ font-size:13px; min-height:20px; margin:8px 0; }
+#proDialog .getrow{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; }
+#proDialog .getrow a{ flex:1; text-align:center; text-decoration:none; }
+.varrow{ display:flex; gap:8px; flex-wrap:wrap; }
+.varrow canvas{ width:104px; height:104px; border:1px solid var(--line); border-radius:10px; cursor:pointer; background:#fff; }
+@media (max-width: 820px){
+  .layout{ flex-direction:column; }
+  #panel{ width:100%; max-height:none; }
+  header h1{ font-size:28px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Tile Mo</h1>
+    <p data-i18n="tagline">Seamless pattern studio — draw once, tile forever.</p>
+  </div>
+  <div class="topbar">
+    <button id="themeBtn" class="iconbtn" title="Theme" aria-label="Theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a867e" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="#8a867e" stroke="none"/></svg>
+    </button>
+    <button id="langBtn" class="iconbtn">EN | 繁中</button>
+    <a class="iconbtn" href="https://buymeacoffee.com/whynotartmoney" target="_blank" rel="noopener" title="Buy Me a Coffee" aria-label="Buy Me a Coffee">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#8a867e" stroke-width="1.8" stroke-linecap="round"><path d="M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M17 10h1.6a2.4 2.4 0 0 1 0 4.8H17"/><path d="M8 5.6c0-1.1 1-1.1 1-2.2M12 5.6c0-1.1 1-1.1 1-2.2"/></svg>
+    </a>
+    <button id="proBtn" class="probtn">Go Pro</button>
+  </div>
+</header>
+
+<div id="loadError">Paper.js failed to load. Check your connection and reload — Tile Mo needs the Paper.js library from CDN.</div>
+
+<div class="layout">
+<aside id="panel">
+
+<section class="sec">
+  <h2><span data-i18n="secTile">Tile</span></h2>
+  <div class="row"><label><span data-i18n="tileSize">Tile size</span> <span id="tileSizeVal">320</span>px</label></div>
+  <div class="row"><input id="tileSize" type="range" min="200" max="480" step="10" value="320"></div>
+  <div class="row" id="repeatRow">
+    <button class="btn active" data-repeat="straight">Straight</button>
+    <span data-pro="repeat"><button class="btn" data-repeat="halfdrop">Half-drop</button></span>
+    <span data-pro="repeat"><button class="btn" data-repeat="brick">Brick</button></span>
+    <span data-pro="repeat"><button class="btn" data-repeat="mirror">Mirror</button></span>
+  </div>
+  <div class="row" id="gridRow">
+    <button class="btn active" data-grid="3">3 × 3</button>
+    <span data-pro="grid5"><button class="btn" data-grid="5">5 × 5</button></span>
+  </div>
+  <div class="row"><button id="clearAll" class="btn danger" data-i18n="clearAll">Clear all</button></div>
+</section>
+
+<section class="sec">
+  <h2><span data-i18n="secSym">Symmetry</span></h2>
+  <div class="row" id="symRow">
+    <button class="btn active" data-sym="none">None</button>
+    <button class="btn" data-sym="mirrorLR">Mirror ↔</button>
+    <span data-pro="sym"><button class="btn" data-sym="mirrorUD">Mirror ↕</button></span>
+    <span data-pro="sym"><button class="btn" data-sym="mirror4">Four-way</button></span>
+  </div>
+  <div data-pro="kaleido">
+    <div class="row"><label><input id="kaleidoOn" type="checkbox"> <span data-i18n="kaleido">Kaleidoscope</span></label></div>
+    <div class="row"><label><span data-i18n="petals">Petals</span> <span id="petalsVal">6</span></label></div>
+    <div class="row"><input id="petals" type="range" min="3" max="12" step="1" value="6"></div>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span data-i18n="secMotif">Motifs</span> <span class="hint" data-i18n="motifHint">Tap to add at tile centre, then drag on canvas.</span></h2>
+  <div class="row" id="motifRow">
+    <button class="mbtn" data-shape="dot"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="#8a867e"/></svg><span data-i18n="m_dot">Dot</span></button>
+    <button class="mbtn" data-shape="diamond"><svg viewBox="0 0 24 24"><path d="M12 3 L19 12 L12 21 L5 12 Z" fill="#8a867e"/></svg><span data-i18n="m_diamond">Diamond</span></button>
+    <button class="mbtn" data-shape="star"><svg viewBox="0 0 24 24"><path d="M12 2 L14.7 8.9 L22 9.3 L16.5 14 L18.2 21.2 L12 17.2 L5.8 21.2 L7.5 14 L2 9.3 L9.3 8.9 Z" fill="#8a867e"/></svg><span data-i18n="m_star">Star</span></button>
+    <span data-pro="motif"><button class="mbtn" data-shape="ring"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="#8a867e" stroke-width="3"/></svg><span data-i18n="m_ring">Ring</span></button></span>
+    <span data-pro="motif"><button class="mbtn" data-shape="triangle"><svg viewBox="0 0 24 24"><path d="M12 4 L21 20 L3 20 Z" fill="#8a867e"/></svg><span data-i18n="m_triangle">Triangle</span></button></span>
+    <span data-pro="motif"><button class="mbtn" data-shape="hexagon"><svg viewBox="0 0 24 24"><path d="M12 3 L20 8 L20 16 L12 21 L4 16 L4 8 Z" fill="#8a867e"/></svg><span data-i18n="m_hex">Hexagon</span></button></span>
+    <span data-pro="motif"><button class="mbtn" data-shape="leaf"><svg viewBox="0 0 24 24"><path d="M12 2 C19 8 19 16 12 22 C5 16 5 8 12 2 Z" fill="#8a867e"/></svg><span data-i18n="m_leaf">Leaf</span></button></span>
+    <span data-pro="motif"><button class="mbtn" data-shape="heart"><svg viewBox="0 0 24 24"><path d="M12 21 C4 15 2 10 2 7.5 C2 4.5 4.5 3 6.8 3 C9 3 11 4.5 12 6.5 C13 4.5 15 3 17.2 3 C19.5 3 22 4.5 22 7.5 C22 10 20 15 12 21 Z" fill="#8a867e"/></svg><span data-i18n="m_heart">Heart</span></button></span>
+    <span data-pro="motif"><button class="mbtn" data-shape="moon"><svg viewBox="0 0 24 24"><path d="M20 13.5 A9 9 0 1 1 10.5 4 A7.2 7.2 0 0 0 20 13.5 Z" fill="#8a867e"/></svg><span data-i18n="m_moon">Moon</span></button></span>
+    <span data-pro="motif"><button class="mbtn" data-shape="cross"><svg viewBox="0 0 24 24"><path d="M9 2 H15 V9 H22 V15 H15 V22 H9 V15 H2 V9 H9 Z" fill="#8a867e"/></svg><span data-i18n="m_cross">Cross</span></button></span>
+    <span data-pro="motif"><button class="mbtn" data-shape="flower"><svg viewBox="0 0 24 24"><circle cx="12" cy="6" r="4" fill="#8a867e"/><circle cx="17.5" cy="9.5" r="4" fill="#8a867e"/><circle cx="17.5" cy="15.5" r="4" fill="#8a867e"/><circle cx="12" cy="19" r="4" fill="#8a867e"/><circle cx="6.5" cy="15.5" r="4" fill="#8a867e"/><circle cx="6.5" cy="9.5" r="4" fill="#8a867e"/></svg><span data-i18n="m_flower">Flower</span></button></span>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span data-i18n="secSel">Selected element</span></h2>
+  <div id="selPanel"></div>
+</section>
+
+<section class="sec">
+  <h2><span data-i18n="secPalette">Palette</span></h2>
+  <div class="row" id="paletteRow">
+    <button class="btn active" data-palette="0">1</button>
+    <span data-pro="palette"><button class="btn" data-palette="1">2</button></span>
+    <span data-pro="palette"><button class="btn" data-palette="2">3</button></span>
+    <span data-pro="palette"><button class="btn" data-palette="3">4</button></span>
+    <button class="btn" id="applyPalette" data-i18n="applyPalette">Apply to all</button>
+  </div>
+  <p class="hint" data-i18n="paletteHint">Palette 1 is free. Palettes 2–4 are Pro. Tap a colour dot in Selected element to recolour one element.</p>
+</section>
+
+<section class="sec" data-pro="pen">
+  <h2><span data-i18n="secPen">Hand pen</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row">
+    <button id="penToggle" class="btn" data-i18n="penDraw">Draw mode</button>
+    <button id="penSmooth" class="btn" data-i18n="penSmooth">Smooth</button>
+    <button id="penSimplify" class="btn" data-i18n="penSimplify">Simplify</button>
+  </div>
+  <p class="hint" data-i18n="penHint">Draw on the canvas. Pen uses the last picked colour. Smooth and Simplify apply to the selected pen path.</p>
+</section>
+
+<section class="sec" data-pro="deform">
+  <h2><span data-i18n="secDeform">Deform</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row"><label><span data-i18n="twist">Twist</span> <span id="twistVal">0</span>°</label></div>
+  <div class="row"><input id="twist" type="range" min="-90" max="90" step="1" value="0"></div>
+  <div class="row"><label><span data-i18n="wave">Wave</span> <span id="waveVal">0</span>px</label></div>
+  <div class="row"><input id="wave" type="range" min="-40" max="40" step="1" value="0"></div>
+  <div class="row"><label><span data-i18n="swirl">Swirl</span> <span id="swirlVal">0</span>°</label></div>
+  <div class="row"><input id="swirl" type="range" min="-90" max="90" step="1" value="0"></div>
+  <div class="row"><label><span data-i18n="stretch">Stretch</span> <span id="stretchVal">0</span>%</label></div>
+  <div class="row"><input id="stretch" type="range" min="-50" max="100" step="1" value="0"></div>
+</section>
+
+<section class="sec" data-pro="style">
+  <h2><span data-i18n="secStyle">Style</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row"><label><input id="gradOn" type="checkbox"> <span data-i18n="gradient">Gradient fill</span></label></div>
+  <div class="row"><label><span data-i18n="blend">Blend</span></label>
+    <select id="blendSel">
+      <option value="normal">Normal</option>
+      <option value="multiply">Multiply</option>
+      <option value="screen">Screen</option>
+      <option value="overlay">Overlay</option>
+    </select>
+  </div>
+  <div class="row"><label><input id="shadowOn" type="checkbox"> <span data-i18n="shadow">Shadow</span></label></div>
+</section>
+
+<section class="sec" data-pro="bool">
+  <h2><span data-i18n="secBool">Boolean</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row"><label>A</label><select id="boolA"></select></div>
+  <div class="row"><label>B</label><select id="boolB"></select></div>
+  <div class="row">
+    <button id="boolUnite" class="btn" data-i18n="boolUnite">Unite</button>
+    <button id="boolSubtract" class="btn" data-i18n="boolSubtract">Subtract</button>
+    <button id="boolIntersect" class="btn" data-i18n="boolIntersect">Intersect</button>
+  </div>
+  <p class="hint" id="boolMsg"></p>
+</section>
+
+<section class="sec" data-pro="symbol">
+  <h2><span data-i18n="secSymbol">Symbols</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row">
+    <button id="symDefine" class="btn" data-i18n="symDefine">Define from selected</button>
+  </div>
+  <div class="row"><select id="symSel"></select><button id="symPlace" class="btn" data-i18n="symPlace">Place instance</button></div>
+  <div class="row"><label><span data-i18n="symSize">Definition size</span></label></div>
+  <div class="row"><input id="symSize" type="range" min="10" max="120" step="1" value="34"></div>
+  <div class="row"><label><span data-i18n="symColor">Definition colour</span></label><input id="symColor" type="color" value="#c96f4a"></div>
+  <p class="hint" data-i18n="symHint">Editing a definition updates every instance at once.</p>
+</section>
+
+<section class="sec" data-pro="image">
+  <h2><span data-i18n="secImage">Image</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row"><input id="imgFile" type="file" accept="image/*"></div>
+  <p class="hint" data-i18n="imgUploadHint">Choose a PNG or JPG to add as an image motif (transparent PNGs keep their transparency).</p>
+  <div class="row">
+    <button id="imgExtract" class="btn" data-i18n="imgExtract">Extract palette</button>
+    <button id="imgAdd" class="btn" data-i18n="imgAdd">Add image as motif</button>
+  </div>
+  <div class="row"><input id="svgFile" type="file" accept=".svg,image/svg+xml"></div>
+  <p class="hint" data-i18n="svgHint">SVG files are imported as editable paths.</p>
+  <p class="hint" data-i18n="imgHint">Extracted colours become the active palette. Image motifs are stored inside saved JSON, so files can get large.</p>
+</section>
+
+<section class="sec" data-pro="variant">
+  <h2><span data-i18n="secVariant">Variants</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row"><label><span data-i18n="seed">Seed</span></label><input id="seedInput" type="number" value="7"></div>
+  <div class="row">
+    <button id="varRandom" class="btn" data-i18n="varRandom">Randomize</button>
+    <button id="varGen" class="btn" data-i18n="varGen">Generate 4</button>
+  </div>
+  <div class="varrow" id="varRow">
+    <canvas width="200" height="200" data-var="0"></canvas>
+    <canvas width="200" height="200" data-var="1"></canvas>
+    <canvas width="200" height="200" data-var="2"></canvas>
+    <canvas width="200" height="200" data-var="3"></canvas>
+  </div>
+  <p class="hint" data-i18n="varHint">Tap a variant tile to apply it.</p>
+</section>
+
+<section class="sec" data-pro="anim">
+  <h2><span data-i18n="secAnim">Animated preview</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row"><label><input id="animOn" type="checkbox"> <span data-i18n="anim">Animate</span></label>
+    <select id="animMode">
+      <option value="rotate">Rotate</option>
+      <option value="breathe">Breathe</option>
+    </select>
+  </div>
+  <p class="hint" data-i18n="animHint">Animates the editor canvas and the tiled preview together.</p>
+</section>
+
+<section class="sec" data-pro="json">
+  <h2><span data-i18n="secSave">Save &amp; share</span> <span class="pro-tag">PRO</span></h2>
+  <div class="row">
+    <button id="saveJson" class="btn" data-i18n="saveJson">Save JSON</button>
+    <button id="copyLink" class="btn" data-i18n="copyLink">Copy share link</button>
+  </div>
+  <div class="row"><input id="loadJson" type="file" accept=".json,application/json"></div>
+  <p class="hint" id="shareMsg"></p>
+</section>
+
+<section class="sec">
+  <h2><span data-i18n="secExport">Export</span></h2>
+  <div class="row">
+    <button id="expPng" class="btn" data-i18n="expPng">PNG tile</button>
+    <button id="expSvg" class="btn" data-i18n="expSvg">SVG tile</button>
+  </div>
+  <div class="row">
+    <span data-pro="hd"><button id="expHd" class="btn" data-i18n="expHd">PNG 2048 HD</button></span>
+    <span data-pro="batch"><button id="expBatch" class="btn" data-i18n="expBatch">Batch 4 palettes</button></span>
+  </div>
+  <p class="hint" data-i18n="expHint">SVG is true vector — open it in Illustrator to edit. Batch export downloads 4 files; allow multiple downloads if asked.</p>
+</section>
+
+</aside>
+<main>
+  <div class="stage">
+    <div class="canvasbox">
+      <h3 data-i18n="editorTitle">Editor — one tile</h3>
+      <canvas id="editorCanvas" width="640" height="640"></canvas>
+      <p class="hint" data-i18n="hintDrag">Drag shapes on the canvas to move them. Anything crossing an edge wraps to the opposite edge.</p>
+    </div>
+    <div class="canvasbox">
+      <h3 data-i18n="previewTitle">Live tiled preview</h3>
+      <canvas id="previewCanvas" width="600" height="600"></canvas>
+      <p class="hint" data-i18n="hintWrap">The preview tiles the editor tile with the chosen repeat mode. Seams you see here are real.</p>
+    </div>
+  </div>
+</main>
+</div>
+
+<div id="proOverlay">
+  <div id="proDialog">
+    <h2 data-i18n="dlgTitle">Tile Mo Pro</h2>
+    <p data-i18n="dlgDesc">This feature is Pro. Pro unlocks every repeat mode, the full motif library, pen, deform, boolean, symbols, image tools, variants, animation, JSON share and HD export.</p>
+    <p class="testnote" data-i18n="dlgTest">TEST checkout links: these are test purchases — no real money is charged. Live checkout opens after the store is approved.</p>
+    <div class="getrow">
+      <a class="btn active" id="buyMonthly" href="#" target="_blank" rel="noopener" data-i18n="dlgMonthly">Get Pro Monthly — test</a>
+      <a class="btn active" id="buyLifetime" href="#" target="_blank" rel="noopener" data-i18n="dlgLifetime">Get Pro Lifetime — test</a>
+    </div>
+    <div class="row"><input id="proKeyInput" type="text" placeholder="License key" data-i18n-ph="dlgKeyPh"></div>
+    <div class="row">
+      <button id="validateKey" class="btn active" data-i18n="dlgValidate">Validate key</button>
+      <button id="closeDialog" class="btn" data-i18n="dlgClose">Close</button>
+    </div>
+    <p id="proStatus"></p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// TILE MO CONFIG — TEST WIRING (temporary, live approval pending)
+// To go live, replace ONLY the two checkout URLs below with the
+// live variant buy links. No API key or secret is stored here.
+// ============================================================
+var CONFIG = {
+  monthlyCheckout: "https://openx.lemonsqueezy.com/checkout/buy/2301559",
+  lifetimeCheckout: "https://openx.lemonsqueezy.com/checkout/buy/2301570",
+  licenseValidateUrl: "https://api.lemonsqueezy.com/v1/licenses/validate",
+  instanceName: "tile-mo"
+};
+// TEST checkout links: test purchases only, no real money charged.
+// Live checkout opens after the Lemon Squeezy store is approved.
+
+var PALETTES = [
+  { name: "Classic", colors: ["#2f2b26", "#8a867e", "#d9d2c3", "#c96f4a", "#7ba7a0"] },
+  { name: "Blush", colors: ["#b85c5c", "#e8b4a0", "#f2e3d5", "#8a867e", "#3f3a33"] },
+  { name: "Forest", colors: ["#2e5a34", "#7fae7d", "#d9d2c3", "#c9a227", "#3f3a33"] },
+  { name: "Ocean", colors: ["#1f4e5f", "#7ba7a0", "#d9e8e3", "#e8b4a0", "#2f2b26"] }
+];
+
+var I18N = {
+  en: {
+    tagline: "Seamless pattern studio — draw once, tile forever.",
+    secTile: "Tile", tileSize: "Tile size", clearAll: "Clear all",
+    secSym: "Symmetry", kaleido: "Kaleidoscope", petals: "Petals",
+    secMotif: "Motifs", motifHint: "Tap to add at tile centre, then drag on canvas.",
+    m_dot: "Dot", m_diamond: "Diamond", m_star: "Star", m_ring: "Ring",
+    m_triangle: "Triangle", m_hex: "Hexagon", m_leaf: "Leaf", m_heart: "Heart",
+    m_moon: "Moon", m_cross: "Cross", m_flower: "Flower",
+    secSel: "Selected element",
+    secPalette: "Palette", applyPalette: "Apply to all",
+    paletteHint: "Palette 1 is free. Palettes 2–4 are Pro. Tap a colour dot in Selected element to recolour one element.",
+    secPen: "Hand pen", penDraw: "Draw mode", penSmooth: "Smooth", penSimplify: "Simplify",
+    penHint: "Draw on the canvas. Pen uses the last picked colour. Smooth and Simplify apply to the selected pen path.",
+    secDeform: "Deform", twist: "Twist", wave: "Wave", swirl: "Swirl", stretch: "Stretch",
+    secStyle: "Style", gradient: "Gradient fill", blend: "Blend", shadow: "Shadow",
+    secBool: "Boolean", boolUnite: "Unite", boolSubtract: "Subtract", boolIntersect: "Intersect",
+    secSymbol: "Symbols", symDefine: "Define from selected", symPlace: "Place instance",
+    symSize: "Definition size", symColor: "Definition colour",
+    symHint: "Editing a definition updates every instance at once.",
+    secImage: "Image", imgExtract: "Extract palette", imgAdd: "Add image as motif",
+    svgHint: "SVG files are imported as editable paths.",
+    imgUploadHint: "Choose a PNG or JPG to add as an image motif (transparent PNGs keep their transparency).",
+    imgHint: "Extracted colours become the active palette. Image motifs are stored inside saved JSON, so files can get large.",
+    secVariant: "Variants", seed: "Seed", varRandom: "Randomize", varGen: "Generate 4",
+    varHint: "Tap a variant tile to apply it.",
+    secAnim: "Animated preview", anim: "Animate",
+    animHint: "Animates the editor canvas and the tiled preview together.",
+    secSave: "Save & share", saveJson: "Save JSON", copyLink: "Copy share link",
+    secExport: "Export", expPng: "PNG tile", expSvg: "SVG tile", expHd: "PNG 2048 HD", expBatch: "Batch 4 palettes",
+    expHint: "SVG is true vector — open it in Illustrator to edit. Batch export downloads 4 files; allow multiple downloads if asked.",
+    editorTitle: "Editor — one tile", previewTitle: "Live tiled preview",
+    hintDrag: "Drag shapes on the canvas to move them. Anything crossing an edge wraps to the opposite edge.",
+    hintWrap: "The preview tiles the editor tile with the chosen repeat mode. Seams you see here are real.",
+    dlgTitle: "Tile Mo Pro", dlgTest: "TEST checkout links: these are test purchases — no real money is charged. Live checkout opens after the store is approved.",
+    dlgMonthly: "Get Pro Monthly — test", dlgLifetime: "Get Pro Lifetime — test",
+    dlgValidate: "Validate key", dlgClose: "Close", dlgKeyPh: "License key",
+    dlgDesc: "This feature is Pro. Pro unlocks every repeat mode, the full motif library, pen, deform, boolean, symbols, image tools, variants, animation, JSON share and HD export.",
+    proBtn: "Go Pro", proBtnActive: "Pro active",
+    selEmpty: "Nothing selected. Tap a shape on the canvas, or add a motif.",
+    selSize: "Size", selAngle: "Angle", selCount: "Count", selStroke: "Stroke width",
+    dup: "Duplicate", del: "Delete", noElements: "No elements yet.",
+    boolEmpty: "Boolean needs two shapes or paths.",
+    copied: "Share link copied.", copyFail: "Copy failed — the link is in the address bar.",
+    validOk: "Pro unlocked — thank you!", validBad: "This license key is not valid.",
+    validErr: "Could not reach the license server. Check your connection and try again — no Pro access was granted.",
+    validEmpty: "Enter a license key first.", validating: "Validating…"
+  },
+  zh: {
+    tagline: "無縫圖案工作室 — 畫一次，鋪滿全版。",
+    secTile: "圖塊", tileSize: "圖塊尺寸", clearAll: "全部清除",
+    secSym: "對稱", kaleido: "萬花筒", petals: "花瓣數",
+    secMotif: "圖案元素", motifHint: "點一下加到圖塊中央，之後可以直接拖。",
+    m_dot: "圓點", m_diamond: "菱形", m_star: "星星", m_ring: "圓圈",
+    m_triangle: "三角形", m_hex: "六角形", m_leaf: "葉子", m_heart: "愛心",
+    m_moon: "月亮", m_cross: "十字", m_flower: "花",
+    secSel: "已選元素",
+    secPalette: "配色", applyPalette: "套用到全部",
+    paletteHint: "配色 1 免費，配色 2–4 係 Pro。喺「已選元素」點色點可以只改一個元素嘅色。",
+    secPen: "手繪筆", penDraw: "繪畫模式", penSmooth: "平滑", penSimplify: "簡化",
+    penHint: "喺畫布上畫。筆用最後揀過嘅色。平滑同簡化會套用到已選嘅手繪路徑。",
+    secDeform: "變形", twist: "扭曲", wave: "波浪", swirl: "漩渦", stretch: "拉長",
+    secStyle: "風格", gradient: "漸變填充", blend: "混合模式", shadow: "陰影",
+    secBool: "布林運算", boolUnite: "聯集", boolSubtract: "減去", boolIntersect: "交集",
+    secSymbol: "符號", symDefine: "由已選建立", symPlace: "放置實例",
+    symSize: "定義尺寸", symColor: "定義顏色",
+    symHint: "改定義會一次過更新晒所有實例。",
+    secImage: "圖片", imgExtract: "抽取配色", imgAdd: "用圖片做元素",
+    svgHint: "SVG 檔會匯入成可以再改嘅路徑。",
+    imgUploadHint: "揀 PNG／JPG 檔做圖片 motif（透明 PNG 會保留透明）。",
+    imgHint: "抽出嚟嘅色會成為現用配色。圖片元素會存入 JSON，檔案可能會變大。",
+    secVariant: "變體", seed: "種子", varRandom: "隨機", varGen: "生成 4 款",
+    varHint: "點變體圖可以直接套用。",
+    secAnim: "動態預覽", anim: "播放動畫",
+    animHint: "編輯畫布同拼貼預覽會一齊郁。",
+    secSave: "儲存同分享", saveJson: "儲存 JSON", copyLink: "複製分享連結",
+    secExport: "匯出", expPng: "PNG 圖塊", expSvg: "SVG 圖塊", expHd: "PNG 2048 高清", expBatch: "批量 4 配色",
+    expHint: "SVG 係真矢量，入 Illustrator 可以再改。批量匯出會下載 4 個檔，有提示就允許多重下載。",
+    editorTitle: "編輯器 — 一個圖塊", previewTitle: "即時拼貼預覽",
+    hintDrag: "拖畫布上面嘅圖形可以移動。任何嘢出邊都會由對邊包返入嚟。",
+    hintWrap: "預覽會用揀好嘅重複方式鋪滿圖塊，見到嘅接縫就係真實接縫。",
+    dlgTitle: "Tile Mo Pro", dlgTest: "TEST 結帳連結：只係測試購買，唔會收真錢。商店批核之後先會開正式結帳。",
+    dlgMonthly: "月費 Pro — 測試", dlgLifetime: "終身 Pro — 測試",
+    dlgValidate: "驗證 Key", dlgClose: "關閉", dlgKeyPh: "License key",
+    dlgDesc: "呢個功能係 Pro。Pro 會解鎖全部重複方式、成個元素庫、手繪筆、變形、布林運算、符號、圖片工具、變體、動畫、JSON 分享同高清匯出。",
+    proBtn: "升級 Pro", proBtnActive: "Pro 已啟用",
+    selEmpty: "未揀任何嘢。點畫布上面嘅圖形，或者加一個元素。",
+    selSize: "大小", selAngle: "角度", selCount: "數量", selStroke: "線粗",
+    dup: "複製", del: "刪除", noElements: "暫時未有元素。",
+    boolEmpty: "布林運算需要兩個圖形或者路徑。",
+    copied: "分享連結已複製。", copyFail: "複製失敗 — 連結喺網址列。",
+    validOk: "Pro 已解鎖 — 多謝！", validBad: "呢個 license key 無效。",
+    validErr: "連唔到 license 伺服器。檢查網絡再試一次 — 未授予 Pro 權限。",
+    validEmpty: "請先輸入 license key。", validating: "驗證緊…"
+  }
+};
+
+var lang = "en";
+function T(k){ var d = I18N[lang] || I18N.en; return d[k] || I18N.en[k] || k; }
+function applyLang(l){
+  lang = l;
+  try { localStorage.setItem("tilemo_lang", l); } catch (e) {}
+  document.documentElement.lang = (l === "zh") ? "zh-Hant" : "en";
+  var els = document.querySelectorAll("[data-i18n]");
+  for (var i = 0; i < els.length; i++){ els[i].textContent = T(els[i].getAttribute("data-i18n")); }
+  var phs = document.querySelectorAll("[data-i18n-ph]");
+  for (var j = 0; j < phs.length; j++){ phs[j].setAttribute("placeholder", T(phs[j].getAttribute("data-i18n-ph"))); }
+  var pb = document.getElementById("proBtn");
+  if (pb) pb.textContent = isPro() ? T("proBtnActive") : T("proBtn");
+  refreshSelectionPanel();
+}
+
+var uid = 1, sid = 1;
+function nid(){ return "m" + (uid++); }
+function nsid(){ return "s" + (sid++); }
+
+var state = {
+  tileSize: 320, grid: 3, repeat: "straight",
+  symmetry: "none", kaleido: false, petals: 6,
+  deform: { twist: 0, wave: 0, swirl: 0, stretch: 0 },
+  palette: 0, useCustom: false, customPalette: null,
+  blend: "normal", gradient: false, shadow: false,
+  seed: 7, anim: false, animMode: "rotate",
+  penMode: false, penColorIdx: 3, lastColorIdx: 0,
+  items: [], symbols: [], selectedId: null
+};
+var prevTileSize = 320;
+var editorOrigin = { x: 160, y: 160 };
+var animGroup = null;
+var variantStates = [];
+
+function paletteColors(){
+  if (state.useCustom && state.customPalette) return state.customPalette;
+  return PALETTES[state.palette].colors;
+}
+function colorOf(d){
+  var cols = paletteColors();
+  if (d.color) return d.color;
+  return cols[(d.colorIdx || 0) % cols.length];
+}
+function $(id){ return document.getElementById(id); }
+function isPro(){
+  try { var v = JSON.parse(localStorage.getItem("tilemo_pro") || "null"); return !!(v && v.valid); }
+  catch (e) { return false; }
+}
+function mulberry32(seed){
+  var a = seed | 0;
+  return function(){
+    a = (a + 0x6D2B79F5) | 0;
+    var t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function downloadCanvas(cvs, name){
+  cvs.toBlob(function(blob){
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  }, "image/png");
+}
+function downloadText(text, name, type){
+  var blob = new Blob([text], { type: type || "application/json" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+}
+
+// ---------------- shape builders ----------------
+function polyPoints(P, cx, cy, r, n, startDeg){
+  var pts = [];
+  for (var k = 0; k < n; k++){
+    var a = (startDeg + k * 360 / n) * Math.PI / 180;
+    pts.push(new P.Point(cx + r * Math.cos(a), cy + r * Math.sin(a)));
+  }
+  return pts;
+}
+function buildShape(P, shape, cx, cy, size, angle, color){
+  var c = new P.Point(cx, cy), item = null;
+  if (shape === "dot"){
+    item = new P.Path.Circle(c, size);
+  } else if (shape === "diamond"){
+    item = new P.Path({ segments: [
+      new P.Point(cx, cy - size), new P.Point(cx + size, cy),
+      new P.Point(cx, cy + size), new P.Point(cx - size, cy)], closed: true });
+  } else if (shape === "star"){
+    var pts = [];
+    for (var k = 0; k < 10; k++){
+      var r = (k % 2 === 0) ? size : size * 0.45;
+      var a = (-90 + k * 36) * Math.PI / 180;
+      pts.push(new P.Point(cx + r * Math.cos(a), cy + r * Math.sin(a)));
+    }
+    item = new P.Path({ segments: pts, closed: true });
+  } else if (shape === "ring"){
+    item = new P.Path.Circle(c, size);
+    item.fillColor = null;
+    item.strokeColor = new P.Color(color);
+    item.strokeWidth = Math.max(2, size * 0.32);
+    if (angle) item.rotate(angle, c);
+    item.data = item.data || {};
+    return item;
+  } else if (shape === "triangle"){
+    item = new P.Path({ segments: polyPoints(P, cx, cy, size, 3, -90), closed: true });
+  } else if (shape === "hexagon"){
+    item = new P.Path({ segments: polyPoints(P, cx, cy, size, 6, -90), closed: true });
+  } else if (shape === "leaf"){
+    var s = size / 50;
+    item = new P.Path("M50 5 C 80 30, 85 65, 50 95 C 15 65, 20 30, 50 5 Z");
+    item.scale(s, new P.Point(0, 0));
+    item.position = c;
+  } else if (shape === "heart"){
+    var hs = size / 50;
+    item = new P.Path("M50 88 C 20 60, 5 40, 5 25 C 5 10, 20 5, 32 12 C 40 17, 47 25, 50 32 C 53 25, 60 17, 68 12 C 80 5, 95 10, 95 25 C 95 40, 80 60, 50 88 Z");
+    item.scale(hs, new P.Point(0, 0));
+    item.position = c;
+  } else if (shape === "cross"){
+    var w = size * 0.45;
+    item = new P.Path({ segments: [
+      new P.Point(cx - w, cy - size), new P.Point(cx + w, cy - size),
+      new P.Point(cx + w, cy - w), new P.Point(cx + size, cy - w),
+      new P.Point(cx + size, cy + w), new P.Point(cx + w, cy + w),
+      new P.Point(cx + w, cy + size), new P.Point(cx - w, cy + size),
+      new P.Point(cx - w, cy + w), new P.Point(cx - size, cy + w),
+      new P.Point(cx - size, cy - w), new P.Point(cx - w, cy - w)], closed: true });
+  } else if (shape === "moon"){
+    var c1 = new P.Path.Circle(c, size);
+    var c2 = new P.Path.Circle(new P.Point(cx + size * 0.45, cy - size * 0.25), size * 0.8);
+    item = c1.subtract(c2);
+    c1.remove(); c2.remove();
+  } else if (shape === "flower"){
+    var acc = null;
+    for (var p = 0; p < 6; p++){
+      var petal = new P.Path.Ellipse(new P.Rectangle(new P.Point(cx, cy - size * 0.28), new P.Size(size * 1.1, size * 0.56)));
+      petal.rotate(p * 60, c);
+      if (!acc) acc = petal;
+      else { var u = acc.unite(petal); acc.remove(); petal.remove(); acc = u; }
+    }
+    var core = new P.Path.Circle(c, size * 0.3);
+    var fin = acc.unite(core);
+    acc.remove(); core.remove();
+    item = fin;
+  } else {
+    item = new P.Path.Circle(c, size);
+  }
+  if (item){
+    item.fillColor = new P.Color(color);
+    item.strokeColor = null;
+    if (angle) item.rotate(angle, c);
+  }
+  return item;
+}
+
+// ---------------- transforms ----------------
+function rotPt(x, y, cx, cy, deg){
+  var r = deg * Math.PI / 180, co = Math.cos(r), si = Math.sin(r);
+  var dx = x - cx, dy = y - cy;
+  return { x: cx + dx * co - dy * si, y: cy + dx * si + dy * co };
+}
+// Anchor transforms for shape / symbol / image descriptors.
+function expandSymmetry(d){
+  var W = state.tileSize;
+  var list = [{ x: d.x, y: d.y, angle: d.angle || 0 }];
+  var sym = state.symmetry;
+  if (state.kaleido){
+    var out = [];
+    for (var k = 0; k < state.petals; k++){
+      var deg = k * 360 / state.petals;
+      for (var i = 0; i < list.length; i++){
+        var t = list[i], p = { x: t.x, y: t.y, angle: t.angle };
+        if (k % 2 === 1) p = { x: W - p.x, y: p.y, angle: 180 - p.angle };
+        var rp = rotPt(p.x, p.y, W / 2, W / 2, deg);
+        out.push({ x: rp.x, y: rp.y, angle: p.angle + deg });
+      }
+    }
+    return out;
+  }
+  if (sym === "mirrorLR"){
+    return list.concat(list.map(function(t){ return { x: W - t.x, y: t.y, angle: 180 - t.angle }; }));
+  }
+  if (sym === "mirrorUD"){
+    return list.concat(list.map(function(t){ return { x: t.x, y: W - t.y, angle: -t.angle }; }));
+  }
+  if (sym === "mirror4"){
+    var a = list.map(function(t){ return { x: W - t.x, y: t.y, angle: 180 - t.angle }; });
+    var b = list.map(function(t){ return { x: t.x, y: W - t.y, angle: -t.angle }; });
+    var cc = list.map(function(t){ return { x: W - t.x, y: W - t.y, angle: t.angle + 180 }; });
+    return list.concat(a, b, cc);
+  }
+  return list;
+}
+function deformPt(x, y, angle){
+  var W = state.tileSize, C = W / 2, maxR = C * Math.SQRT2;
+  var r = Math.hypot(x - C, y - C);
+  var a = angle, df = state.deform;
+  if (df.twist){ var f1 = df.twist * (r / maxR); var p1 = rotPt(x, y, C, C, f1); x = p1.x; y = p1.y; a += f1; }
+  if (df.swirl){ var f2 = df.swirl * (1 - r / maxR); var p2 = rotPt(x, y, C, C, f2); x = p2.x; y = p2.y; a += f2; }
+  if (df.wave){ y += df.wave * Math.sin(x * Math.PI * 4 / W); }
+  if (df.stretch){ x = C + (x - C) * (1 + df.stretch / 100); }
+  return { x: x, y: y, angle: a };
+}
+// Geometry transforms for whole-path descriptors.
+function pathSymmetryItems(P, base){
+  var W = state.tileSize, C = new P.Point(W / 2, W / 2);
+  var sym = state.symmetry, out = [base];
+  function clone(){ var c = base.clone(); return c; }
+  if (state.kaleido){
+    for (var k = 1; k < state.petals; k++){
+      var c = clone();
+      if (k % 2 === 1) c.scale(-1, 1, new P.Point(W / 2, 0));
+      c.rotate(k * 360 / state.petals, C);
+      out.push(c);
+    }
+  } else if (sym === "mirrorLR"){
+    var m1 = clone(); m1.scale(-1, 1, new P.Point(W / 2, 0)); out.push(m1);
+  } else if (sym === "mirrorUD"){
+    var m2 = clone(); m2.scale(1, -1, new P.Point(0, W / 2)); out.push(m2);
+  } else if (sym === "mirror4"){
+    var q1 = clone(); q1.scale(-1, 1, new P.Point(W / 2, 0)); out.push(q1);
+    var q2 = clone(); q2.scale(1, -1, new P.Point(0, W / 2)); out.push(q2);
+    var q3 = clone(); q3.scale(-1, -1, C); out.push(q3);
+  }
+  return out;
+}
+function deformPathItem(P, item){
+  var paths = (item instanceof P.CompoundPath) ? item.children.slice() : [item];
+  for (var i = 0; i < paths.length; i++){
+    var segs = paths[i].segments;
+    for (var j = 0; j < segs.length; j++){
+      var p = deformPt(segs[j].point.x, segs[j].point.y, 0);
+      segs[j].point = new P.Point(p.x, p.y);
+    }
+  }
+}
+
+// ---------------- core renderer ----------------
+// Builds the motif into scope P. o: {originX, originY, scale, wrap, bg}
+function buildMotif(P, o){
+  var layer = P.project.activeLayer;
+  layer.removeChildren();
+  var W = state.tileSize;
+  var cols = paletteColors();
+  if (o.bg){
+    var bg = new P.Path.Rectangle(new P.Rectangle(new P.Point(o.originX, o.originY), new P.Size(W * o.scale, W * o.scale)));
+    bg.fillColor = new P.Color("#ffffff");
+    bg.strokeColor = null;
+    bg.data.noHit = true;
+  }
+  var g = new P.Group();
+  var baseArr = [];
+
+  function drawShapeAt(d, t, sx){
+    var n = d.count || 1;
+    var col = d.color || cols[(d.colorIdx || 0) % cols.length];
+    if (n <= 1){
+      var it = buildShape(P, d.shape, t.x, t.y, d.size, t.angle, col);
+      if (it){ if (sx !== 1) it.scale(sx, 1, new P.Point(t.x, t.y)); it.data.descId = d.id; baseArr.push(it); }
+    } else {
+      for (var k = 0; k < n; k++){
+        var a = k * 360 / n;
+        var p = rotPt(t.x + d.size * 2.0, t.y, t.x, t.y, a);
+        var it2 = buildShape(P, d.shape, p.x, p.y, d.size, t.angle + a, col);
+        if (it2){ if (sx !== 1) it2.scale(sx, 1, new P.Point(p.x, p.y)); it2.data.descId = d.id; baseArr.push(it2); }
+      }
+    }
+  }
+  function drawImageAt(d, t){
+    var r = new P.Raster(d.dataURL);
+    r.position = new P.Point(t.x, t.y);
+    r.rotate(t.angle || 0, r.position);
+    r.data.descId = d.id;
+    r.data.isRaster = true;
+    function fit(){
+      if (d.iw && d.ih && r.width) r.size = new P.Size(d.size, d.size * d.ih / d.iw);
+    }
+    r.onLoad = function(){ fit(); if (!d._loaded){ d._loaded = true; renderPreview(); } };
+    fit();
+    baseArr.push(r);
+  }
+
+  for (var i = 0; i < state.items.length; i++){
+    var d = state.items[i];
+    if (d.kind === "path"){
+      var base = d.compound ? new P.CompoundPath(d.pathData) : new P.Path(d.pathData);
+      if (d.tileSize && d.tileSize !== W) base.scale(W / d.tileSize, new P.Point(0, 0));
+      if (d.ox || d.oy) base.translate(new P.Point(d.ox || 0, d.oy || 0));
+      deformPathItem(P, base);
+      var pcol = d.color || cols[(d.colorIdx || 0) % cols.length];
+      if (d.fill){ base.fillColor = new P.Color(pcol); base.strokeColor = null; }
+      else { base.fillColor = null; base.strokeColor = new P.Color(pcol); base.strokeWidth = d.strokeWidth || 3; }
+      base.data.descId = d.id;
+      var syms = pathSymmetryItems(P, base);
+      for (var s = 0; s < syms.length; s++){ syms[s].data.descId = d.id; baseArr.push(syms[s]); }
+    } else if (d.kind === "symbol"){
+      var def = null;
+      for (var q = 0; q < state.symbols.length; q++){ if (state.symbols[q].id === d.symbolId) def = state.symbols[q]; }
+      if (!def) continue;
+      var anchors = expandSymmetry(d);
+      for (var a2 = 0; a2 < anchors.length; a2++){
+        var dt = deformPt(anchors[a2].x, anchors[a2].y, anchors[a2].angle);
+        var sx2 = 1 + state.deform.stretch / 100;
+        var bcol = def.base.color || cols[(def.base.colorIdx || 0) % cols.length];
+        var sit = buildShape(P, def.base.shape, dt.x, dt.y, d.size, dt.angle, bcol);
+        if (sit){ if (sx2 !== 1) sit.scale(sx2, 1, new P.Point(dt.x, dt.y)); sit.data.descId = d.id; baseArr.push(sit); }
+      }
+    } else if (d.kind === "image"){
+      var anchors2 = expandSymmetry(d);
+      for (var a3 = 0; a3 < anchors2.length; a3++){
+        var dt2 = deformPt(anchors2[a3].x, anchors2[a3].y, anchors2[a3].angle);
+        if (o.wrap){
+          for (var dx = -1; dx <= 1; dx++) for (var dy = -1; dy <= 1; dy++){
+            drawImageAt(d, { x: dt2.x + dx * W, y: dt2.y + dy * W, angle: dt2.angle });
+          }
+        } else {
+          drawImageAt(d, dt2);
+        }
+      }
+    } else {
+      var anchors3 = expandSymmetry(d);
+      for (var a4 = 0; a4 < anchors3.length; a4++){
+        var dt3 = deformPt(anchors3[a4].x, anchors3[a4].y, anchors3[a4].angle);
+        var sx3 = 1 + state.deform.stretch / 100;
+        drawShapeAt(d, dt3, sx3);
+      }
+    }
+  }
+
+  // Wrap-around: clone every vector item to the 8 neighbouring tiles.
+  if (o.wrap){
+    var wraps = [];
+    for (var w = 0; w < baseArr.length; w++){
+      var it = baseArr[w];
+      if (it.data && it.data.isRaster) continue;
+      for (var wx = -1; wx <= 1; wx++) for (var wy = -1; wy <= 1; wy++){
+        if (wx === 0 && wy === 0) continue;
+        var c = it.clone();
+        c.translate(new P.Point(wx * W, wy * W));
+        wraps.push(c);
+      }
+    }
+    baseArr = baseArr.concat(wraps);
+  }
+  g.addChildren(baseArr);
+  g.scale(o.scale, new P.Point(0, 0));
+  g.translate(new P.Point(o.originX, o.originY));
+
+  // Style pass (after transform, so gradients use final bounds).
+  if (state.gradient || state.blend !== "normal" || state.shadow){
+    var kids = g.children;
+    for (var k2 = 0; k2 < kids.length; k2++){
+      var ch = kids[k2];
+      if (state.gradient && ch.fillColor){
+        ch.fillColor = { gradient: { stops: [cols[0], cols[2] || cols[1]] }, origin: ch.bounds.topLeft, destination: ch.bounds.bottomRight };
+      }
+      if (state.blend !== "normal") ch.blendMode = state.blend;
+      if (state.shadow){
+        ch.shadowColor = new P.Color(0, 0, 0, 0.28);
+        ch.shadowBlur = 10;
+        ch.shadowOffset = new P.Point(3, 3);
+      }
+    }
+  }
+  return { group: g };
+}
+
+function renderEditor(){
+  var W = state.tileSize;
+  var ox = (640 - W) / 2, oy = (640 - W) / 2;
+  editorOrigin = { x: ox, y: oy };
+  var res = buildMotif(paper, { originX: ox, originY: oy, scale: 1, wrap: true, bg: true });
+  animGroup = res.group;
+  var b = new paper.Path.Rectangle(new paper.Rectangle(new paper.Point(ox - 3, oy - 3), new paper.Size(W + 6, W + 6)));
+  b.strokeColor = new paper.Color("#8a867e");
+  b.strokeWidth = 1;
+  b.dashArray = [6, 5];
+  b.fillColor = null;
+  b.data.noHit = true;
+  renderPreview();
+}
+
+function renderPreview(){
+  var ec = $("editorCanvas"), pc = $("previewCanvas");
+  if (!ec || !pc) return;
+  // Paper.js paints on animation frames, not synchronously: without this,
+  // drawImage below would read the previous frame and the preview would
+  // lag one interaction behind the editor. Force a synchronous paint first.
+  if (paper.view && paper.view.update) paper.view.update();
+  var ctx = pc.getContext("2d");
+  var W = state.tileSize, ox = editorOrigin.x, oy = editorOrigin.y;
+  var grid = state.grid, S = 600, cell = S / grid;
+  ctx.clearRect(0, 0, S, S);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, S, S);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, S, S);
+  ctx.clip();
+  function drawCell(cx, cy, flipX, flipY){
+    ctx.save();
+    ctx.translate(cx + (flipX ? cell : 0), cy + (flipY ? cell : 0));
+    ctx.scale(flipX ? -1 : 1, flipY ? -1 : 1);
+    ctx.drawImage(ec, ox, oy, W, W, 0, 0, cell, cell);
+    ctx.restore();
+  }
+  var mode = state.repeat;
+  if (mode === "straight"){
+    for (var r = 0; r < grid; r++) for (var c = 0; c < grid; c++) drawCell(c * cell, r * cell, false, false);
+  } else if (mode === "halfdrop"){
+    for (var c = 0; c < grid; c++){
+      var off = (c % 2) * cell / 2;
+      for (var r = -1; r < grid; r++) drawCell(c * cell, r * cell + off, false, false);
+    }
+  } else if (mode === "brick"){
+    for (var r = 0; r < grid; r++){
+      var off2 = (r % 2) * cell / 2;
+      for (var c = -1; c < grid; c++) drawCell(c * cell + off2, r * cell, false, false);
+    }
+  } else if (mode === "mirror"){
+    for (var r = 0; r < grid; r++) for (var c = 0; c < grid; c++) drawCell(c * cell, r * cell, c % 2 === 1, r % 2 === 1);
+  }
+  ctx.restore();
+}
+
+// ---------------- canvas tool: select, drag, pen ----------------
+var drag = null, penPath = null;
+function initTool(){
+  var tool = new paper.Tool();
+  tool.onMouseDown = function(ev){
+    if (state.penMode){
+      if (!isPro()){ openProDialog(); return; }
+      penPath = new paper.Path({ strokeColor: new paper.Color(paletteColors()[state.penColorIdx % 5]), strokeWidth: 3 });
+      penPath.add(ev.point);
+      return;
+    }
+    var found = null;
+    if (paper.project.hitTestAll){
+      var hits = paper.project.hitTestAll(ev.point, { fill: true, stroke: true, tolerance: 6 });
+      for (var i = 0; i < hits.length; i++){
+        if (hits[i].item && hits[i].item.data && hits[i].item.data.descId){ found = hits[i].item.data.descId; break; }
+      }
+    } else {
+      var h = paper.project.hitTest(ev.point, { fill: true, stroke: true, tolerance: 6 });
+      if (h && h.item && h.item.data) found = h.item.data.descId;
+    }
+    state.selectedId = found || null;
+    if (found){
+      var d = state.items.find(function(i){ return i.id === found; });
+      if (d) drag = { id: found, start: ev.point, ox: d.x || 0, oy: d.y || 0, pox: d.ox || 0, poy: d.oy || 0 };
+    }
+    refreshSelectionPanel();
+  };
+  tool.onMouseDrag = function(ev){
+    if (penPath){ penPath.add(ev.point); return; }
+    if (drag){
+      var dx = ev.point.x - drag.start.x, dy = ev.point.y - drag.start.y;
+      var d = state.items.find(function(i){ return i.id === drag.id; });
+      if (!d) return;
+      if (d.kind === "path"){ d.ox = drag.pox + dx; d.oy = drag.poy + dy; }
+      else { d.x = drag.ox + dx; d.y = drag.oy + dy; }
+      renderEditor();
+    }
+  };
+  tool.onMouseUp = function(){
+    if (penPath){
+      var p = penPath; penPath = null;
+      if (p.segments.length > 1){
+        p.translate(new paper.Point(-editorOrigin.x, -editorOrigin.y));
+        var nd = { id: nid(), kind: "path", pathData: p.pathData, compound: false, fill: false,
+          strokeWidth: 3, colorIdx: state.penColorIdx, color: null, tileSize: state.tileSize, ox: 0, oy: 0 };
+        state.items.push(nd);
+        state.selectedId = nd.id;
+      }
+      p.remove();
+      renderEditor();
+      refreshSelectionPanel();
+      return;
+    }
+    if (drag){
+      var d = state.items.find(function(i){ return i.id === drag.id; });
+      if (d && d.kind === "path" && (d.ox || d.oy)){
+        var tmp = d.compound ? new paper.CompoundPath(d.pathData) : new paper.Path(d.pathData);
+        tmp.translate(new paper.Point(d.ox, d.oy));
+        d.pathData = tmp.pathData;
+        d.compound = tmp instanceof paper.CompoundPath;
+        tmp.remove(); d.ox = 0; d.oy = 0;
+      }
+      drag = null;
+      renderEditor();
+    }
+  };
+  paper.view.onFrame = function(){
+    if (!state.anim || !animGroup) return;
+    var t = Date.now();
+    if (state.animMode === "rotate"){ animGroup.rotation = (t / 50) % 360; }
+    else {
+      var s = 1 + 0.045 * Math.sin(t / 280);
+      animGroup.scaling = new paper.Point(s, s);
+    }
+    // Preview follows the editor animation (one frame behind the draw).
+    renderPreview();
+  };
+}
+
+// ---------------- selection panel ----------------
+function descLabel(d){
+  if (d.kind === "shape") return T("m_" + d.shape);
+  if (d.kind === "symbol"){
+    var def = null;
+    for (var i = 0; i < state.symbols.length; i++){ if (state.symbols[i].id === d.symbolId) def = state.symbols[i]; }
+    return (lang === "zh" ? "符號" : "Symbol") + (def ? " · " + T("m_" + def.base.shape) : "");
+  }
+  if (d.kind === "image") return lang === "zh" ? "圖片" : "Image";
+  return lang === "zh" ? "手繪路徑" : "Pen path";
+}
+function refreshSelectionPanel(){
+  var panel = $("selPanel");
+  if (!panel) return;
+  var cols = paletteColors();
+  var html = "";
+  var d = null;
+  for (var i = 0; i < state.items.length; i++){ if (state.items[i].id === state.selectedId) d = state.items[i]; }
+  if (!d){
+    html += '<p class="hint">' + T("selEmpty") + "</p>";
+  } else {
+    html += '<p><strong>' + descLabel(d) + "</strong></p>";
+    html += '<div class="row">';
+    for (var c = 0; c < cols.length; c++){
+      var sel = (!d.color && (d.colorIdx || 0) === c) ? " sel" : "";
+      html += '<button class="sw' + sel + '" data-act="sw" data-idx="' + c + '" style="background:' + cols[c] + '" aria-label="colour"></button>';
+    }
+    var curCol = d.color || cols[(d.colorIdx || 0) % cols.length];
+    html += '<input type="color" data-act="ccolor" value="' + curCol + '">';
+    html += "</div>";
+    if (d.kind !== "path"){
+      html += '<div class="row"><label>' + T("selSize") + ' <span data-val="size">' + d.size + "</span></label></div>";
+      html += '<div class="row"><input type="range" data-act="size" min="8" max="120" step="1" value="' + d.size + '"></div>';
+      html += '<div class="row"><label>' + T("selAngle") + ' <span data-val="angle">' + (d.angle || 0) + "°</span></label></div>";
+      html += '<div class="row"><input type="range" data-act="angle" min="-180" max="180" step="1" value="' + (d.angle || 0) + '"></div>';
+      if (d.kind === "shape"){
+        html += '<div class="row"><label>' + T("selCount") + ' <span data-val="count">' + (d.count || 1) + "</span></label></div>";
+        html += '<div class="row"><input type="range" data-act="count" min="1" max="12" step="1" value="' + (d.count || 1) + '"></div>';
+      }
+    } else if (!d.fill){
+      html += '<div class="row"><label>' + T("selStroke") + ' <span data-val="strokeW">' + (d.strokeWidth || 3) + "</span></label></div>";
+      html += '<div class="row"><input type="range" data-act="strokeW" min="1" max="12" step="1" value="' + (d.strokeWidth || 3) + '"></div>';
+    }
+    html += '<div class="row"><button class="btn" data-act="dup">' + T("dup") + '</button><button class="btn danger" data-act="del">' + T("del") + "</button></div>";
+  }
+  html += '<p class="hint">' + (lang === "zh" ? "元素：" : "Elements:") + "</p>";
+  html += '<div class="elem-list">';
+  if (state.items.length === 0) html += '<p class="hint">' + T("noElements") + "</p>";
+  for (var j = 0; j < state.items.length; j++){
+    var it = state.items[j];
+    var act = (it.id === state.selectedId) ? " active" : "";
+    html += '<button class="btn' + act + '" data-act="sel" data-id="' + it.id + '">' + descLabel(it) + "</button>";
+  }
+  html += "</div>";
+  panel.innerHTML = html;
+  refreshBoolSelects();
+  refreshSymSelect();
+}
+function selPanelInput(ev){
+  var t = ev.target, act = t.getAttribute("data-act");
+  if (!act) return;
+  var d = null;
+  for (var i = 0; i < state.items.length; i++){ if (state.items[i].id === state.selectedId) d = state.items[i]; }
+  if (!d) return;
+  if (act === "size"){ d.size = parseFloat(t.value); var s1 = $("selPanel").querySelector('[data-val="size"]'); if (s1) s1.textContent = d.size; renderEditor(); }
+  else if (act === "angle"){ d.angle = parseFloat(t.value); var s2 = $("selPanel").querySelector('[data-val="angle"]'); if (s2) s2.textContent = d.angle + "°"; renderEditor(); }
+  else if (act === "count"){ d.count = parseInt(t.value, 10); var s3 = $("selPanel").querySelector('[data-val="count"]'); if (s3) s3.textContent = d.count; renderEditor(); }
+  else if (act === "strokeW"){ d.strokeWidth = parseFloat(t.value); var s4 = $("selPanel").querySelector('[data-val="strokeW"]'); if (s4) s4.textContent = d.strokeWidth; renderEditor(); }
+  else if (act === "ccolor"){ d.color = t.value; renderEditor(); }
+}
+function selPanelClick(ev){
+  var btn = ev.target.closest ? ev.target.closest("[data-act]") : null;
+  if (!btn) return;
+  var act = btn.getAttribute("data-act");
+  if (act === "sw"){
+    var idx = parseInt(btn.getAttribute("data-idx"), 10);
+    state.penColorIdx = idx; state.lastColorIdx = idx;
+    var d = null;
+    for (var i = 0; i < state.items.length; i++){ if (state.items[i].id === state.selectedId) d = state.items[i]; }
+    if (d){ d.colorIdx = idx; d.color = null; renderEditor(); }
+    refreshSelectionPanel();
+  } else if (act === "sel"){
+    state.selectedId = btn.getAttribute("data-id");
+    refreshSelectionPanel();
+  } else if (act === "dup"){
+    var d2 = null;
+    for (var i = 0; i < state.items.length; i++){ if (state.items[i].id === state.selectedId) d2 = state.items[i]; }
+    if (!d2) return;
+    var copy = JSON.parse(JSON.stringify(d2));
+    copy.id = nid();
+    if (copy.kind !== "path"){ copy.x += 14; copy.y += 14; }
+    state.items.push(copy);
+    state.selectedId = copy.id;
+    renderEditor(); refreshSelectionPanel();
+  } else if (act === "del"){
+    state.items = state.items.filter(function(i){ return i.id !== state.selectedId; });
+    state.selectedId = null;
+    renderEditor(); refreshSelectionPanel();
+  }
+}
+
+// ---------------- helpers ----------------
+function setActive(containerId, attr, val){
+  var btns = $(containerId).querySelectorAll("button[" + attr + "]");
+  for (var i = 0; i < btns.length; i++){
+    btns[i].classList.toggle("active", btns[i].getAttribute(attr) === String(val));
+  }
+}
+function addMotif(shape){
+  var W = state.tileSize;
+  var d = { id: nid(), kind: "shape", shape: shape, x: W / 2, y: W / 2, size: 34, angle: 0,
+    colorIdx: state.lastColorIdx || 0, color: null, count: 1 };
+  state.items.push(d);
+  state.selectedId = d.id;
+  renderEditor();
+  refreshSelectionPanel();
+}
+function openProDialog(){ $("proOverlay").classList.add("open"); }
+function closeProDialog(){ $("proOverlay").classList.remove("open"); }
+function refreshLocks(){
+  var pro = isPro();
+  var els = document.querySelectorAll("[data-pro]");
+  for (var i = 0; i < els.length; i++) els[i].classList.toggle("is-locked", !pro);
+  var pb = $("proBtn");
+  if (pb) pb.textContent = pro ? T("proBtnActive") : T("proBtn");
+}
+// Pro gate: capture-phase guard. Locked Pro controls open the dialog
+// instead of acting. Never blocks free controls.
+["pointerdown", "mousedown", "keydown", "click"].forEach(function(type){
+  document.addEventListener(type, function(e){
+    if (isPro()) return;
+    var t = e.target && e.target.closest ? e.target.closest("[data-pro]") : null;
+    if (t){
+      e.preventDefault();
+      e.stopPropagation();
+      openProDialog();
+    }
+  }, true);
+});
+
+// ---------------- theme + language ----------------
+var THEMES = ["silver", "white", "black"];
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  try { localStorage.setItem("tilemo_theme", t); } catch (e) {}
+}
+
+// ---------------- boolean ----------------
+function refreshBoolSelects(){
+  var a = $("boolA"), b = $("boolB");
+  var va = a.value, vb = b.value, opts = "";
+  for (var i = 0; i < state.items.length; i++){
+    var d = state.items[i];
+    if (d.kind === "shape" || d.kind === "path") opts += '<option value="' + d.id + '">' + descLabel(d) + "</option>";
+  }
+  a.innerHTML = opts; b.innerHTML = opts;
+  if (va) a.value = va; if (vb) b.value = vb;
+}
+function boolOp(op){
+  var aId = $("boolA").value, bId = $("boolB").value;
+  var da = null, db = null;
+  for (var i = 0; i < state.items.length; i++){
+    if (state.items[i].id === aId) da = state.items[i];
+    if (state.items[i].id === bId) db = state.items[i];
+  }
+  if (!da || !db || aId === bId){ $("boolMsg").textContent = T("boolEmpty"); return; }
+  function tempItem(d){
+    var it;
+    if (d.kind === "path"){
+      it = d.compound ? new paper.CompoundPath(d.pathData) : new paper.Path(d.pathData);
+      if (d.tileSize && d.tileSize !== state.tileSize) it.scale(state.tileSize / d.tileSize, new paper.Point(0, 0));
+      if (d.ox || d.oy) it.translate(new paper.Point(d.ox || 0, d.oy || 0));
+    } else {
+      it = buildShape(paper, d.shape, d.x, d.y, d.size, d.angle, "#000000");
+    }
+    it.translate(new paper.Point(editorOrigin.x, editorOrigin.y));
+    return it;
+  }
+  var ta = tempItem(da), tb = tempItem(db);
+  var res = (op === "unite") ? ta.unite(tb) : (op === "subtract") ? ta.subtract(tb) : ta.intersect(tb);
+  ta.remove(); tb.remove();
+  var empty = !res || (res.segments && res.segments.length === 0) || (res.children && res.children.length === 0);
+  if (empty){ if (res) res.remove(); $("boolMsg").textContent = T("boolEmpty"); renderEditor(); return; }
+  res.translate(new paper.Point(-editorOrigin.x, -editorOrigin.y));
+  var nd = { id: nid(), kind: "path", pathData: res.pathData, compound: res instanceof paper.CompoundPath,
+    fill: true, colorIdx: (da.colorIdx || 0), color: da.color || null, tileSize: state.tileSize, ox: 0, oy: 0 };
+  res.remove();
+  state.items = state.items.filter(function(x){ return x.id !== aId && x.id !== bId; });
+  state.items.push(nd);
+  state.selectedId = nd.id;
+  $("boolMsg").textContent = "";
+  renderEditor();
+  refreshSelectionPanel();
+}
+
+// ---------------- symbols ----------------
+function refreshSymSelect(){
+  var s = $("symSel");
+  var v = s.value, opts = "";
+  for (var i = 0; i < state.symbols.length; i++){
+    var def = state.symbols[i];
+    opts += '<option value="' + def.id + '">' + T("m_" + def.base.shape) + "</option>";
+  }
+  s.innerHTML = opts;
+  if (v) s.value = v;
+  var cur = null;
+  for (var j = 0; j < state.symbols.length; j++){ if (state.symbols[j].id === s.value) cur = state.symbols[j]; }
+  if (cur){
+    $("symSize").value = cur.base.size;
+    $("symColor").value = cur.base.color || paletteColors()[(cur.base.colorIdx || 0) % 5];
+  }
+}
+function defineSymbol(){
+  var d = null;
+  for (var i = 0; i < state.items.length; i++){ if (state.items[i].id === state.selectedId) d = state.items[i]; }
+  if (!d || d.kind !== "shape") return;
+  var def = { id: nsid(), base: { shape: d.shape, size: d.size, angle: d.angle, colorIdx: d.colorIdx, color: d.color } };
+  state.symbols.push(def);
+  var inst = { id: nid(), kind: "symbol", symbolId: def.id, x: d.x, y: d.y, size: d.size, angle: d.angle };
+  state.items = state.items.map(function(x){ return x.id === d.id ? inst : x; });
+  state.selectedId = inst.id;
+  renderEditor();
+  refreshSelectionPanel();
+}
+function placeInstance(){
+  var defId = $("symSel").value, def = null;
+  for (var i = 0; i < state.symbols.length; i++){ if (state.symbols[i].id === defId) def = state.symbols[i]; }
+  if (!def) return;
+  var W = state.tileSize;
+  state.items.push({ id: nid(), kind: "symbol", symbolId: def.id, x: W / 2, y: W / 2, size: def.base.size, angle: 0 });
+  renderEditor();
+  refreshSelectionPanel();
+}
+function currentSymDef(){
+  var defId = $("symSel").value;
+  for (var i = 0; i < state.symbols.length; i++){ if (state.symbols[i].id === defId) return state.symbols[i]; }
+  return null;
+}
+
+// ---------------- image ----------------
+var pendingImage = null;
+function onImgFile(ev){
+  var f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    var img = new Image();
+    img.onload = function(){ pendingImage = { dataURL: rd.result, iw: img.naturalWidth, ih: img.naturalHeight }; };
+    img.src = rd.result;
+  };
+  rd.readAsDataURL(f);
+}
+function extractPalette(){
+  if (!pendingImage) return;
+  var img = new Image();
+  img.onload = function(){
+    var c = document.createElement("canvas"); c.width = 120; c.height = 120;
+    var ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0, 120, 120);
+    var data;
+    try { data = ctx.getImageData(0, 0, 120, 120).data; } catch (e) { return; }
+    var counts = {};
+    for (var i = 0; i < data.length; i += 16){
+      if (data[i + 3] < 128) continue;
+      var key = (((data[i] >> 4) & 15) << 8) | (((data[i + 1] >> 4) & 15) << 4) | ((data[i + 2] >> 4) & 15);
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    var keys = Object.keys(counts).sort(function(a, b){ return counts[b] - counts[a]; }).slice(0, 5);
+    var cols = keys.map(function(k){
+      var n = parseInt(k, 10);
+      var r = ((n >> 8) & 15) * 17, g = ((n >> 4) & 15) * 17, b = (n & 15) * 17;
+      function hx(v){ var h = v.toString(16); return h.length === 1 ? "0" + h : h; }
+      return "#" + hx(r) + hx(g) + hx(b);
+    });
+    while (cols.length < 5) cols.push(PALETTES[0].colors[cols.length]);
+    state.customPalette = cols;
+    state.useCustom = true;
+    renderEditor();
+    refreshSelectionPanel();
+  };
+  img.src = pendingImage.dataURL;
+}
+function addImageMotif(){
+  if (!pendingImage) return;
+  var W = state.tileSize;
+  state.items.push({ id: nid(), kind: "image", dataURL: pendingImage.dataURL,
+    iw: pendingImage.iw, ih: pendingImage.ih, x: W / 2, y: W / 2, size: 160, angle: 0 });
+  renderEditor();
+  refreshSelectionPanel();
+}
+function onSvgFile(ev){
+  var f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    paper.project.importSVG(rd.result, {
+      onLoad: function(item){
+        var bw = item.bounds.width, bh = item.bounds.height;
+        if (bw > 0 && bh > 0){
+          var sc = Math.min(1, (state.tileSize * 0.8) / Math.max(bw, bh));
+          if (sc < 1) item.scale(sc, item.bounds.center);
+        }
+        item.position = new paper.Point(editorOrigin.x + state.tileSize / 2, editorOrigin.y + state.tileSize / 2);
+        var found = [];
+        (function collect(it){
+          if (it instanceof paper.CompoundPath) found.push({ it: it, compound: true });
+          else if (it instanceof paper.Path) found.push({ it: it, compound: false });
+          else if (it.children) for (var i = 0; i < it.children.length; i++) collect(it.children[i]);
+        })(item);
+        var added = 0;
+        for (var j = 0; j < found.length; j++){
+          var src = found[j].it;
+          if (!src.pathData) continue;
+          var tmp = found[j].compound ? new paper.CompoundPath(src.pathData) : new paper.Path(src.pathData);
+          tmp.translate(new paper.Point(-editorOrigin.x, -editorOrigin.y));
+          var d = { id: nid(), kind: "path", pathData: tmp.pathData, compound: found[j].compound,
+            fill: !!src.fillColor, strokeWidth: src.strokeWidth || 3,
+            colorIdx: 0, color: null, tileSize: state.tileSize, ox: 0, oy: 0 };
+          if (src.fillColor) d.color = src.fillColor.toCSS(true);
+          else if (src.strokeColor) d.color = src.strokeColor.toCSS(true);
+          tmp.remove();
+          state.items.push(d);
+          added++;
+        }
+        item.remove();
+        if (added){
+          state.selectedId = state.items[state.items.length - 1].id;
+          renderEditor();
+          refreshSelectionPanel();
+        }
+      }
+    });
+  };
+  rd.readAsText(f);
+}
+
+// ---------------- variants + seed ----------------
+function makeVariant(seed){
+  var vs = JSON.parse(JSON.stringify(state));
+  var rand = mulberry32(seed);
+  var W = vs.tileSize;
+  for (var i = 0; i < vs.items.length; i++){
+    var d = vs.items[i];
+    if (d.kind === "path") continue;
+    d.x += (rand() - 0.5) * W * 0.15;
+    d.y += (rand() - 0.5) * W * 0.15;
+    d.size = Math.max(8, d.size * (0.85 + rand() * 0.3));
+    d.angle = (d.angle || 0) + (rand() - 0.5) * 60;
+    d.colorIdx = Math.floor(rand() * 5);
+    d.color = null;
+  }
+  vs.palette = Math.floor(rand() * 4);
+  vs.useCustom = false;
+  vs.selectedId = null;
+  return vs;
+}
+function withState(s, fn){
+  var saved = state;
+  state = s;
+  try { fn(); } finally { state = saved; }
+}
+var variantScopes = {};
+function renderVariantCanvases(){
+  var cans = document.querySelectorAll("#varRow canvas");
+  for (var v = 0; v < cans.length; v++){
+    (function(cvs, vs, idx){
+      if (!vs) return;
+      var sc = variantScopes[idx];
+      if (!sc){ sc = new paper.PaperScope(); sc.setup(cvs); variantScopes[idx] = sc; }
+      withState(vs, function(){
+        buildMotif(sc, { originX: 0, originY: 0, scale: 200 / vs.tileSize, wrap: true, bg: true });
+      });
+    })(cans[v], variantStates[v], v);
+  }
+}
+function genVariants(){
+  var base = parseInt($("seedInput").value, 10) || 7;
+  state.seed = base;
+  variantStates = [];
+  for (var v = 0; v < 4; v++) variantStates.push(makeVariant(base + v + 1));
+  renderVariantCanvases();
+}
+function varRandom(){
+  var base = Math.floor(Math.random() * 100000);
+  $("seedInput").value = base;
+  state.seed = base;
+  var vs = makeVariant(base);
+  state.items = vs.items;
+  state.palette = vs.palette;
+  state.useCustom = false;
+  renderEditor();
+  refreshSelectionPanel();
+}
+
+// ---------------- animate ----------------
+function syncAnimClass(){
+  var pc = $("previewCanvas");
+  pc.classList.remove("anim-rotate", "anim-breathe");
+}
+
+// ---------------- JSON save / load / share ----------------
+function fillStateDefaults(obj){
+  var defs = { grid: 3, repeat: "straight", symmetry: "none", kaleido: false, petals: 6,
+    deform: { twist: 0, wave: 0, swirl: 0, stretch: 0 }, palette: 0, useCustom: false, customPalette: null,
+    blend: "normal", gradient: false, shadow: false, seed: 7, anim: false, animMode: "rotate",
+    penMode: false, penColorIdx: 3, lastColorIdx: 0, symbols: [], selectedId: null };
+  for (var k in defs){ if (obj[k] === undefined) obj[k] = defs[k]; }
+  return obj;
+}
+function fixUidCounters(){
+  var mu = 0, ms = 0;
+  for (var i = 0; i < state.items.length; i++){
+    var m = /^m(\d+)$/.exec(state.items[i].id || "");
+    if (m) mu = Math.max(mu, parseInt(m[1], 10));
+  }
+  for (var j = 0; j < state.symbols.length; j++){
+    var m2 = /^s(\d+)$/.exec(state.symbols[j].id || "");
+    if (m2) ms = Math.max(ms, parseInt(m2[1], 10));
+  }
+  uid = mu + 1; sid = ms + 1;
+}
+function saveJson(){
+  var copy = JSON.parse(JSON.stringify(state));
+  copy.selectedId = null;
+  downloadText(JSON.stringify(copy, null, 2), "tile-mo-pattern.json", "application/json");
+}
+function onLoadJsonFile(ev){
+  var f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    try {
+      var obj = JSON.parse(rd.result);
+      if (obj && Array.isArray(obj.items) && typeof obj.tileSize === "number"){
+        state = fillStateDefaults(obj);
+        fixUidCounters();
+        prevTileSize = state.tileSize;
+        syncControlsFromState();
+        renderEditor();
+        refreshSelectionPanel();
+      }
+    } catch (e) {}
+  };
+  rd.readAsText(f);
+}
+function encodeState(){ return btoa(unescape(encodeURIComponent(JSON.stringify(state)))); }
+function decodeState(s){ return JSON.parse(decodeURIComponent(escape(atob(s)))); }
+function copyShareLink(){
+  var base = location.href.split("#")[0];
+  var link = base + "#d=" + encodeState();
+  var msg = $("shareMsg");
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(link).then(function(){ msg.textContent = T("copied"); },
+      function(){ msg.textContent = T("copyFail"); });
+  } else {
+    var ta = document.createElement("textarea");
+    ta.value = link; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); msg.textContent = T("copied"); }
+    catch (e) { msg.textContent = T("copyFail"); }
+    ta.remove();
+  }
+}
+
+// ---------------- export ----------------
+function exportPNG(hd){
+  if (hd && !isPro()){ openProDialog(); return; }
+  if (!hd){
+    var ec = $("editorCanvas");
+    var pc = document.createElement("canvas");
+    pc.width = state.tileSize; pc.height = state.tileSize;
+    var ctx = pc.getContext("2d");
+    ctx.drawImage(ec, editorOrigin.x, editorOrigin.y, state.tileSize, state.tileSize, 0, 0, state.tileSize, state.tileSize);
+    downloadCanvas(pc, "tile-mo-pattern.png");
+    return;
+  }
+  var S = 2048;
+  var cvs = document.createElement("canvas"); cvs.width = S; cvs.height = S;
+  var sc = new paper.PaperScope(); sc.setup(cvs);
+  buildMotif(sc, { originX: 0, originY: 0, scale: S / state.tileSize, wrap: true, bg: true });
+  var done = function(){ downloadCanvas(cvs, "tile-mo-pattern-2048.png"); };
+  if (state.items.some(function(i){ return i.kind === "image"; })) setTimeout(done, 900); else done();
+}
+async function exportSVG(){
+  var W = state.tileSize;
+  var cvs = document.createElement("canvas"); cvs.width = W; cvs.height = W;
+  var sc = new paper.PaperScope(); sc.setup(cvs);
+  buildMotif(sc, { originX: 0, originY: 0, scale: 1, wrap: true, bg: false });
+  if (state.items.some(function(i){ return i.kind === "image"; })){
+    await new Promise(function(r){ setTimeout(r, 1200); });
+  }
+  var svg = sc.project.exportSVG({ asString: true });
+  downloadText(svg, "tile-mo-pattern.svg", "image/svg+xml");
+}
+async function batchExport(){
+  if (!isPro()){ openProDialog(); return; }
+  var saved = JSON.parse(JSON.stringify(state));
+  for (var p = 0; p < 4; p++){
+    var vs = JSON.parse(JSON.stringify(saved));
+    vs.palette = p; vs.useCustom = false;
+    (function(vs2, p2){
+      var S = 1024;
+      var cvs = document.createElement("canvas"); cvs.width = S; cvs.height = S;
+      var sc = new paper.PaperScope(); sc.setup(cvs);
+      withState(vs2, function(){
+        buildMotif(sc, { originX: 0, originY: 0, scale: S / vs2.tileSize, wrap: true, bg: true });
+      });
+      downloadCanvas(cvs, "tile-mo-palette-" + (p2 + 1) + ".png");
+    })(vs, p);
+    await new Promise(function(r){ setTimeout(r, 400); });
+  }
+  state = saved;
+  renderEditor();
+}
+
+// ---------------- license ----------------
+async function validateKey(){
+  var key = $("proKeyInput").value.trim();
+  var st = $("proStatus");
+  if (!key){ st.textContent = T("validEmpty"); return; }
+  st.textContent = T("validating");
+  try {
+    var res = await fetch(CONFIG.licenseValidateUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ license_key: key, instance_name: CONFIG.instanceName })
+    });
+    var data = null;
+    try { data = await res.json(); } catch (e) {}
+    var valid = !!(data && ((data.data && data.data.attributes && data.data.attributes.valid) ||
+      (data.meta && data.meta.valid) || data.valid));
+    if (valid){
+      try { localStorage.setItem("tilemo_pro", JSON.stringify({ key: key, valid: true, at: Date.now() })); } catch (e) {}
+      st.textContent = T("validOk");
+      refreshLocks();
+    } else {
+      st.textContent = T("validBad");
+    }
+  } catch (err){
+    st.textContent = T("validErr");
+  }
+}
+
+// ---------------- controls sync ----------------
+function syncControlsFromState(){
+  $("tileSize").value = state.tileSize;
+  $("tileSizeVal").textContent = state.tileSize;
+  setActive("repeatRow", "data-repeat", state.repeat);
+  setActive("gridRow", "data-grid", state.grid);
+  setActive("symRow", "data-sym", state.symmetry);
+  setActive("paletteRow", "data-palette", state.palette);
+  $("kaleidoOn").checked = !!state.kaleido;
+  $("petals").value = state.petals;
+  $("petalsVal").textContent = state.petals;
+  $("twist").value = state.deform.twist; $("twistVal").textContent = state.deform.twist;
+  $("wave").value = state.deform.wave; $("waveVal").textContent = state.deform.wave;
+  $("swirl").value = state.deform.swirl; $("swirlVal").textContent = state.deform.swirl;
+  $("stretch").value = state.deform.stretch; $("stretchVal").textContent = state.deform.stretch;
+  $("gradOn").checked = !!state.gradient;
+  $("blendSel").value = state.blend;
+  $("shadowOn").checked = !!state.shadow;
+  $("animOn").checked = !!state.anim;
+  $("animMode").value = state.animMode;
+  $("seedInput").value = state.seed;
+  syncAnimClass();
+  $("penToggle").classList.toggle("active", !!state.penMode);
+  $("editorCanvas").style.cursor = state.penMode ? "crosshair" : "default";
+}
+
+// ---------------- init ----------------
+function init(){
+  $("buyMonthly").href = CONFIG.monthlyCheckout;
+  $("buyLifetime").href = CONFIG.lifetimeCheckout;
+  var savedTheme = null, savedLang = null;
+  try { savedTheme = localStorage.getItem("tilemo_theme"); savedLang = localStorage.getItem("tilemo_lang"); } catch (e) {}
+  if (savedTheme && THEMES.indexOf(savedTheme) >= 0) applyTheme(savedTheme); else applyTheme("silver");
+  lang = (savedLang === "zh") ? "zh" : "en";
+
+  $("themeBtn").addEventListener("click", function(){
+    var cur = document.documentElement.getAttribute("data-theme") || "silver";
+    var nx = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
+    applyTheme(nx);
+  });
+  $("langBtn").addEventListener("click", function(){ applyLang(lang === "en" ? "zh" : "en"); });
+  $("proBtn").addEventListener("click", openProDialog);
+  $("closeDialog").addEventListener("click", closeProDialog);
+  $("proOverlay").addEventListener("click", function(e){ if (e.target === $("proOverlay")) closeProDialog(); });
+  $("validateKey").addEventListener("click", validateKey);
+
+  $("tileSize").addEventListener("input", function(e){
+    var nv = parseInt(e.target.value, 10);
+    var f = nv / prevTileSize;
+    state.tileSize = nv;
+    for (var i = 0; i < state.items.length; i++){
+      var d = state.items[i];
+      if (d.kind !== "path"){ d.x *= f; d.y *= f; d.size *= f; }
+    }
+    prevTileSize = nv;
+    $("tileSizeVal").textContent = nv;
+    renderEditor();
+  });
+  $("repeatRow").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("button[data-repeat]") : null;
+    if (!b) return;
+    state.repeat = b.getAttribute("data-repeat");
+    setActive("repeatRow", "data-repeat", state.repeat);
+    renderEditor();
+  });
+  $("gridRow").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("button[data-grid]") : null;
+    if (!b) return;
+    state.grid = parseInt(b.getAttribute("data-grid"), 10);
+    setActive("gridRow", "data-grid", state.grid);
+    renderEditor();
+  });
+  $("symRow").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("button[data-sym]") : null;
+    if (!b) return;
+    state.symmetry = b.getAttribute("data-sym");
+    setActive("symRow", "data-sym", state.symmetry);
+    renderEditor();
+  });
+  $("kaleidoOn").addEventListener("change", function(e){ state.kaleido = e.target.checked; renderEditor(); });
+  $("petals").addEventListener("input", function(e){
+    state.petals = parseInt(e.target.value, 10);
+    $("petalsVal").textContent = state.petals;
+    renderEditor();
+  });
+  $("motifRow").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("button[data-shape]") : null;
+    if (!b) return;
+    addMotif(b.getAttribute("data-shape"));
+  });
+  $("clearAll").addEventListener("click", function(){
+    state.items = [];
+    state.selectedId = null;
+    renderEditor();
+    refreshSelectionPanel();
+  });
+  $("paletteRow").addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("button[data-palette]") : null;
+    if (!b) return;
+    state.palette = parseInt(b.getAttribute("data-palette"), 10);
+    state.useCustom = false;
+    setActive("paletteRow", "data-palette", state.palette);
+    renderEditor();
+  });
+  $("applyPalette").addEventListener("click", function(){
+    for (var i = 0; i < state.items.length; i++){
+      var d = state.items[i];
+      d.color = null;
+      d.colorIdx = i % 5;
+    }
+    renderEditor();
+    refreshSelectionPanel();
+  });
+  $("selPanel").addEventListener("input", selPanelInput);
+  $("selPanel").addEventListener("click", selPanelClick);
+
+  $("penToggle").addEventListener("click", function(){
+    state.penMode = !state.penMode;
+    $("penToggle").classList.toggle("active", state.penMode);
+    $("editorCanvas").style.cursor = state.penMode ? "crosshair" : "default";
+  });
+  function eachPath(tmp, fn){
+    if (tmp instanceof paper.CompoundPath){
+      for (var i = 0; i < tmp.children.length; i++) fn(tmp.children[i]);
+    } else fn(tmp);
+  }
+  $("penSmooth").addEventListener("click", function(){
+    var d = null;
+    for (var i = 0; i < state.items.length; i++){ if (state.items[i].id === state.selectedId) d = state.items[i]; }
+    if (!d || d.kind !== "path" || d.fill) return;
+    var tmp = d.compound ? new paper.CompoundPath(d.pathData) : new paper.Path(d.pathData);
+    eachPath(tmp, function(p){ if (p.segments.length > 2) p.smooth(); });
+    d.pathData = tmp.pathData; d.compound = tmp instanceof paper.CompoundPath;
+    tmp.remove(); renderEditor();
+  });
+  $("penSimplify").addEventListener("click", function(){
+    var d = null;
+    for (var i = 0; i < state.items.length; i++){ if (state.items[i].id === state.selectedId) d = state.items[i]; }
+    if (!d || d.kind !== "path" || d.fill) return;
+    var tmp = d.compound ? new paper.CompoundPath(d.pathData) : new paper.Path(d.pathData);
+    eachPath(tmp, function(p){ if (p.segments.length > 2) p.simplify(8); });
+    d.pathData = tmp.pathData; d.compound = tmp instanceof paper.CompoundPath;
+    tmp.remove(); renderEditor();
+  });
+
+  function bindDeform(id, valId, key){
+    $(id).addEventListener("input", function(e){
+      state.deform[key] = parseFloat(e.target.value);
+      $(valId).textContent = state.deform[key];
+      renderEditor();
+    });
+  }
+  bindDeform("twist", "twistVal", "twist");
+  bindDeform("wave", "waveVal", "wave");
+  bindDeform("swirl", "swirlVal", "swirl");
+  bindDeform("stretch", "stretchVal", "stretch");
+  $("gradOn").addEventListener("change", function(e){ state.gradient = e.target.checked; renderEditor(); });
+  $("blendSel").addEventListener("change", function(e){ state.blend = e.target.value; renderEditor(); });
+  $("shadowOn").addEventListener("change", function(e){ state.shadow = e.target.checked; renderEditor(); });
+
+  $("boolUnite").addEventListener("click", function(){ boolOp("unite"); });
+  $("boolSubtract").addEventListener("click", function(){ boolOp("subtract"); });
+  $("boolIntersect").addEventListener("click", function(){ boolOp("intersect"); });
+  $("symDefine").addEventListener("click", defineSymbol);
+  $("symPlace").addEventListener("click", placeInstance);
+  $("symSel").addEventListener("change", refreshSymSelect);
+  $("symSize").addEventListener("input", function(e){
+    var def = currentSymDef();
+    if (!def) return;
+    def.base.size = parseFloat(e.target.value);
+    renderEditor();
+  });
+  $("symColor").addEventListener("input", function(e){
+    var def = currentSymDef();
+    if (!def) return;
+    def.base.color = e.target.value;
+    renderEditor();
+  });
+  $("imgFile").addEventListener("change", onImgFile);
+  $("svgFile").addEventListener("change", onSvgFile);
+  $("imgExtract").addEventListener("click", extractPalette);
+  $("imgAdd").addEventListener("click", addImageMotif);
+  $("seedInput").addEventListener("change", function(e){ state.seed = parseInt(e.target.value, 10) || 7; });
+  $("varRandom").addEventListener("click", varRandom);
+  $("varGen").addEventListener("click", genVariants);
+  $("varRow").addEventListener("click", function(e){
+    var c = e.target.closest ? e.target.closest("canvas[data-var]") : null;
+    if (!c) return;
+    var vs = variantStates[parseInt(c.getAttribute("data-var"), 10)];
+    if (!vs) return;
+    state = JSON.parse(JSON.stringify(vs));
+    fixUidCounters();
+    prevTileSize = state.tileSize;
+    syncControlsFromState();
+    renderEditor();
+    refreshSelectionPanel();
+  });
+  $("animOn").addEventListener("change", function(e){ state.anim = e.target.checked; syncAnimClass(); });
+  $("animMode").addEventListener("change", function(e){ state.animMode = e.target.value; syncAnimClass(); });
+  $("saveJson").addEventListener("click", saveJson);
+  $("copyLink").addEventListener("click", copyShareLink);
+  $("loadJson").addEventListener("change", onLoadJsonFile);
+  $("expPng").addEventListener("click", function(){ exportPNG(false); });
+  $("expSvg").addEventListener("click", exportSVG);
+  $("expHd").addEventListener("click", function(){ exportPNG(true); });
+  $("expBatch").addEventListener("click", batchExport);
+
+  var hashLoaded = false;
+  if (location.hash && location.hash.indexOf("#d=") === 0){
+    try {
+      var decoded = decodeState(location.hash.slice(3));
+      if (decoded && Array.isArray(decoded.items) && typeof decoded.tileSize === "number"){
+        state = fillStateDefaults(decoded);
+        hashLoaded = true;
+      }
+    } catch (e) {}
+  }
+  if (hashLoaded){
+    fixUidCounters();
+    prevTileSize = state.tileSize;
+  } else {
+    state.items = [
+      { id: nid(), kind: "shape", shape: "star", x: 160, y: 160, size: 46, angle: 0, colorIdx: 3, color: null, count: 1 },
+      { id: nid(), kind: "shape", shape: "diamond", x: 292, y: 48, size: 24, angle: 0, colorIdx: 0, color: null, count: 1 },
+      { id: nid(), kind: "shape", shape: "dot", x: 18, y: 160, size: 20, angle: 0, colorIdx: 4, color: null, count: 1 },
+      { id: nid(), kind: "shape", shape: "dot", x: 250, y: 250, size: 15, angle: 0, colorIdx: 1, color: null, count: 1 },
+      { id: nid(), kind: "shape", shape: "dot", x: 80, y: 80, size: 14, angle: 0, colorIdx: 2, color: null, count: 1 }
+    ];
+  }
+
+  applyLang(lang);
+  syncControlsFromState();
+  refreshLocks();
+  if (typeof paper === "undefined"){
+    $("loadError").style.display = "block";
+    return;
+  }
+  paper.setup($("editorCanvas"));
+  initTool();
+  renderEditor();
+  refreshSelectionPanel();
+}
+
+init();
+</script>
+</body>
+</html>
