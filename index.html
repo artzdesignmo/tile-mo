@@ -331,7 +331,8 @@ var CONFIG = {
   monthlyCheckout: "https://openx.lemonsqueezy.com/checkout/buy/934fa5b0-fe63-4707-b9cb-d303de1e127f",
   lifetimeCheckout: "https://openx.lemonsqueezy.com/checkout/buy/d107e805-e8e9-42b0-9c1a-eb89078421be",
   licenseValidateUrl: "https://api.lemonsqueezy.com/v1/licenses/validate",
-  instanceName: "tile-mo"
+  instanceName: "tile-mo", // legacy fixed name: only reused by browsers that validated before per-browser instances (2026-10-29 hardening)
+  storeId: 508220 // OpenX store: keys from any other Lemon Squeezy store are rejected
 };
 // TEST checkout links: test purchases only, no real money charged.
 // Live checkout opens after the Lemon Squeezy store is approved.
@@ -1464,6 +1465,46 @@ async function batchExport(){
 }
 
 // ---------------- license ----------------
+/* PRO-HARDEN-START */
+// One license instance per browser. The instance id is generated once and kept
+// in localStorage, so each browser consumes exactly one LS activation and the
+// dashboard activation limit can cap sharing. Browsers that validated before
+// this change have no stored id; they keep using the legacy fixed name so
+// their existing activation is reused, not consumed again.
+function getProInstance(){
+  try {
+    var id = localStorage.getItem("tilemo_instance");
+    if (!id){
+      id = "tilemo-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem("tilemo_instance", id);
+    }
+    return id;
+  } catch (e){ return CONFIG.instanceName; }
+}
+function lsMeta(data){
+  if (!data) return null;
+  if (data.meta) return data.meta;
+  if (data.data && data.data.meta) return data.data.meta;
+  return null;
+}
+function lsValid(data){
+  if (!data) return false;
+  var ok = !!((data.data && data.data.attributes && data.data.attributes.valid) ||
+    (data.meta && data.meta.valid) || data.valid);
+  if (!ok) return false;
+  var meta = lsMeta(data);
+  if (meta && meta.store_id && String(meta.store_id) !== String(CONFIG.storeId)) return false;
+  return true;
+}
+function savePro(key){
+  try { localStorage.setItem("tilemo_pro", JSON.stringify({ key: key, valid: true, at: Date.now() })); } catch (e) {}
+}
+function clearPro(){
+  try { localStorage.removeItem("tilemo_pro"); } catch (e) {}
+}
+function storedPro(){
+  try { var v = JSON.parse(localStorage.getItem("tilemo_pro") || "null"); return (v && v.valid) ? v : null; } catch (e){ return null; }
+}
 async function validateKey(){
   var key = $("proKeyInput").value.trim();
   var st = $("proStatus");
@@ -1473,14 +1514,12 @@ async function validateKey(){
     var res = await fetch(CONFIG.licenseValidateUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({ license_key: key, instance_name: CONFIG.instanceName })
+      body: JSON.stringify({ license_key: key, instance_name: getProInstance() })
     });
     var data = null;
     try { data = await res.json(); } catch (e) {}
-    var valid = !!(data && ((data.data && data.data.attributes && data.data.attributes.valid) ||
-      (data.meta && data.meta.valid) || data.valid));
-    if (valid){
-      try { localStorage.setItem("tilemo_pro", JSON.stringify({ key: key, valid: true, at: Date.now() })); } catch (e) {}
+    if (lsValid(data)){
+      savePro(key);
       st.textContent = T("validOk");
       refreshLocks();
     } else {
@@ -1490,6 +1529,29 @@ async function validateKey(){
     st.textContent = T("validErr");
   }
 }
+// Re-check a stored Pro unlock on load: an expired, cancelled or disabled key
+// drops Pro. A network failure keeps Pro (offline grace) — only a definite
+// invalid response removes it. Legacy browsers without a stored instance id
+// re-check against the legacy fixed name, so no new activation is consumed.
+async function revalidatePro(){
+  var saved = storedPro();
+  if (!saved || !saved.key) return;
+  var instance = null;
+  try { instance = localStorage.getItem("tilemo_instance"); } catch (e) {}
+  try {
+    var res = await fetch(CONFIG.licenseValidateUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({ license_key: saved.key, instance_name: instance || CONFIG.instanceName })
+    });
+    var data = null;
+    try { data = await res.json(); } catch (e) {}
+    if (!lsValid(data)){ clearPro(); refreshLocks(); renderEditor(); }
+  } catch (err){
+    // offline or unreachable: keep the stored unlock (grace), do not lock out
+  }
+}
+/* PRO-HARDEN-END */
 
 // ---------------- controls sync ----------------
 function syncControlsFromState(){
@@ -1536,6 +1598,7 @@ function init(){
   $("closeDialog").addEventListener("click", closeProDialog);
   $("proOverlay").addEventListener("click", function(e){ if (e.target === $("proOverlay")) closeProDialog(); });
   $("validateKey").addEventListener("click", validateKey);
+  revalidatePro();
 
   $("tileSize").addEventListener("input", function(e){
     var nv = parseInt(e.target.value, 10);
